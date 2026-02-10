@@ -23,7 +23,6 @@ const userNavItems = [
   { label: "Dashboard", icon: LayoutDashboard, path: "/dashboard" },
   { label: "Deposit", icon: ArrowDownToLine, path: "/deposit" },
   { label: "Withdraw", icon: ArrowUpFromLine, path: "/withdraw" },
-  { label: "Transfer", icon: ArrowLeftRight, path: "/transfer" },
   { label: "Statements", icon: FileText, path: "/statements" },
   { label: "Profile & KYC", icon: UserCircle, path: "/profile" },
 ];

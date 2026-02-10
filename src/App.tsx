@@ -23,10 +23,11 @@ import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
 
-function ProtectedRoute({ children, adminOnly }: { children: React.ReactNode; adminOnly?: boolean }) {
+function ProtectedRoute({ children, adminOnly, agentOnly }: { children: React.ReactNode; adminOnly?: boolean; agentOnly?: boolean }) {
   const { user } = useAuth();
   if (!user) return <Navigate to="/login" replace />;
   if (adminOnly && user.role !== "admin") return <Navigate to="/dashboard" replace />;
+  if (agentOnly && user.role !== "agent") return <Navigate to="/dashboard" replace />;
   return <>{children}</>;
 }
 
@@ -43,7 +44,7 @@ const App = () => (
             <Route path="/dashboard" element={<ProtectedRoute><UserDashboard /></ProtectedRoute>} />
             <Route path="/deposit" element={<ProtectedRoute><Deposit /></ProtectedRoute>} />
             <Route path="/withdraw" element={<ProtectedRoute><Withdraw /></ProtectedRoute>} />
-            <Route path="/transfer" element={<ProtectedRoute><Transfer /></ProtectedRoute>} />
+            <Route path="/transfer" element={<ProtectedRoute agentOnly><Transfer /></ProtectedRoute>} />
             <Route path="/statements" element={<ProtectedRoute><Statements /></ProtectedRoute>} />
             <Route path="/profile" element={<ProtectedRoute><ProfileKYC /></ProtectedRoute>} />
             <Route path="/admin" element={<ProtectedRoute adminOnly><AdminDashboard /></ProtectedRoute>} />

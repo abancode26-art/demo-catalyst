@@ -1,5 +1,5 @@
 import React, { createContext, useContext, useState, useCallback } from "react";
-import { DemoUser, DEMO_USERS, Transaction, DEMO_TRANSACTIONS, generateTransactionId, calculateFee } from "@/lib/demo-data";
+import { DemoUser, DEMO_USERS, Transaction, DEMO_TRANSACTIONS, generateTransactionId, calculateFee, STATEMENT_DOWNLOAD_FEE } from "@/lib/demo-data";
 import { toast } from "sonner";
 
 interface AuthContextType {
@@ -10,6 +10,7 @@ interface AuthContextType {
   deposit: (amount: number, method: "mpesa" | "card") => void;
   withdraw: (amount: number, method: "mpesa" | "card") => void;
   transfer: (amount: number, recipientPhone: string) => void;
+  chargeStatementDownload: () => boolean;
   allUsers: DemoUser[];
   updateUser: (userId: string, updates: Partial<DemoUser>) => void;
 }
@@ -129,6 +130,31 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     toast.success(`KES ${amount.toLocaleString()} sent to ${recipient.name}`);
   }, [user, users]);
 
+  const chargeStatementDownload = useCallback((): boolean => {
+    if (!user) return false;
+    if (user.balance < STATEMENT_DOWNLOAD_FEE) {
+      toast.error("Insufficient balance for statement download (KES 50)");
+      return false;
+    }
+    const txn: Transaction = {
+      id: `txn-${Date.now()}`,
+      date: new Date().toISOString().slice(0, 16).replace("T", " "),
+      userId: user.id,
+      userName: user.name,
+      type: "withdrawal",
+      amount: STATEMENT_DOWNLOAD_FEE,
+      fee: 0,
+      status: "completed",
+      reference: generateTransactionId(),
+    };
+    setTransactions((prev) => [txn, ...prev]);
+    const updatedUser = { ...user, balance: user.balance - STATEMENT_DOWNLOAD_FEE };
+    setUser(updatedUser);
+    setUsers((prev) => prev.map((u) => (u.id === user.id ? updatedUser : u)));
+    toast.success("Statement downloaded. KES 50 deducted.");
+    return true;
+  }, [user]);
+
   const updateUser = useCallback((userId: string, updates: Partial<DemoUser>) => {
     setUsers((prev) =>
       prev.map((u) => (u.id === userId ? { ...u, ...updates } : u))
@@ -140,7 +166,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   return (
     <AuthContext.Provider
-      value={{ user, transactions, login, logout, deposit, withdraw, transfer, allUsers: users, updateUser }}
+      value={{ user, transactions, login, logout, deposit, withdraw, transfer, chargeStatementDownload, allUsers: users, updateUser }}
     >
       {children}
     </AuthContext.Provider>
