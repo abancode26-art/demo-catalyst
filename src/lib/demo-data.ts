@@ -221,3 +221,5 @@ export function calculateFee(amount: number, type: "deposit" | "withdrawal" | "t
   if (fee.type === "percentage") return Math.round((amount * fee.amount) / 100);
   return fee.amount;
 }
+
+export const STATEMENT_DOWNLOAD_FEE = 50;

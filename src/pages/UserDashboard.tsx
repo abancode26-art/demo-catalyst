@@ -30,7 +30,6 @@ export default function UserDashboard() {
   const quickActions = [
     { label: "Deposit", icon: ArrowDownToLine, path: "/deposit" },
     { label: "Withdraw", icon: ArrowUpFromLine, path: "/withdraw" },
-    { label: "Transfer", icon: ArrowLeftRight, path: "/transfer" },
     { label: "Statements", icon: FileText, path: "/statements" },
   ];
 
