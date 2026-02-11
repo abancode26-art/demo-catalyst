@@ -5,13 +5,11 @@ import { OTPDialog } from "@/components/OTPDialog";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { cn } from "@/lib/utils";
 import { Loader2 } from "lucide-react";
 import { toast } from "sonner";
 
 export default function Deposit() {
   const { user, deposit } = useAuth();
-  const [method, setMethod] = useState<"mpesa" | "card">("mpesa");
   const [amount, setAmount] = useState("");
   const [showOTP, setShowOTP] = useState(false);
   const [processing, setProcessing] = useState(false);
@@ -32,14 +30,11 @@ export default function Deposit() {
   const handleOTPVerified = () => {
     setShowOTP(false);
     setProcessing(true);
-    // Simulate payment processing
     setTimeout(() => {
-      deposit(parseFloat(amount), method);
+      deposit(parseFloat(amount), "mpesa");
       setProcessing(false);
       setAmount("");
-      if (method === "mpesa") {
-        toast.info("Enter MPesa PIN on your phone to confirm");
-      }
+      toast.info("Enter M-Pesa PIN on your phone to confirm");
     }, 2000);
   };
 
@@ -47,30 +42,9 @@ export default function Deposit() {
     <DashboardLayout title="Deposit Funds">
       <div className="page-container">
         <div className="max-w-xl mx-auto form-card">
-          <h2 className="text-xl font-semibold text-foreground mb-6">Add Money to Wallet</h2>
+          <h2 className="text-xl font-semibold text-foreground mb-6">Add Money via M-Pesa</h2>
 
           <div className="space-y-6">
-            {/* Payment Method */}
-            <div>
-              <Label className="text-sm font-semibold mb-3 block">Payment Method</Label>
-              <div className="flex gap-3">
-                {(["mpesa", "card"] as const).map((m) => (
-                  <button
-                    key={m}
-                    onClick={() => setMethod(m)}
-                    className={cn(
-                      "flex-1 py-3 px-4 rounded-lg border-2 text-sm font-medium transition-all",
-                      method === m
-                        ? "border-primary text-primary bg-accent"
-                        : "border-border text-foreground hover:border-muted-foreground"
-                    )}
-                  >
-                    {m === "mpesa" ? "M-Pesa" : "Card"}
-                  </button>
-                ))}
-              </div>
-            </div>
-
             {/* Amount */}
             <div>
               <Label className="text-sm font-semibold mb-2 block">Amount (KES)</Label>
@@ -93,26 +67,6 @@ export default function Deposit() {
                 ))}
               </div>
             </div>
-
-            {/* Card fields */}
-            {method === "card" && (
-              <div className="space-y-3">
-                <div>
-                  <Label className="text-sm">Card Number</Label>
-                  <Input placeholder="4242 4242 4242 4242" />
-                </div>
-                <div className="grid grid-cols-2 gap-3">
-                  <div>
-                    <Label className="text-sm">Expiry</Label>
-                    <Input placeholder="MM/YY" />
-                  </div>
-                  <div>
-                    <Label className="text-sm">CVV</Label>
-                    <Input placeholder="123" />
-                  </div>
-                </div>
-              </div>
-            )}
 
             <Button
               onClick={handleDeposit}

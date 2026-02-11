@@ -19,7 +19,7 @@ export interface Transaction {
   date: string;
   userId: string;
   userName: string;
-  type: "deposit" | "withdrawal" | "transfer" | "kyc_update";
+  type: "deposit" | "withdrawal" | "transfer" | "kyc_update" | "airtime" | "send_money";
   method?: "mpesa" | "card";
   amount: number;
   fee: number;

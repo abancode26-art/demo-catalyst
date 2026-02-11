@@ -16,21 +16,27 @@ import {
   Settings,
   Landmark,
   ChevronRight,
+  Smartphone,
+  Send,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 const userNavItems = [
   { label: "Dashboard", icon: LayoutDashboard, path: "/dashboard" },
+  { label: "Buy Airtime", icon: Smartphone, path: "/buy-airtime" },
+  { label: "Withdraw to Agent", icon: UserCheck, path: "/withdraw-agent" },
+  { label: "Withdraw to M-Pesa", icon: ArrowUpFromLine, path: "/withdraw-mpesa" },
+  { label: "Send Money", icon: Send, path: "/send-money" },
   { label: "Deposit", icon: ArrowDownToLine, path: "/deposit" },
-  { label: "Withdraw", icon: ArrowUpFromLine, path: "/withdraw" },
   { label: "Statements", icon: FileText, path: "/statements" },
   { label: "Profile & KYC", icon: UserCircle, path: "/profile" },
 ];
 
 const agentNavItems = [
   { label: "Dashboard", icon: LayoutDashboard, path: "/dashboard" },
-  { label: "Load Wallet", icon: ArrowDownToLine, path: "/deposit" },
-  { label: "Withdraw", icon: ArrowUpFromLine, path: "/withdraw" },
+  { label: "Deposit to User", icon: ArrowDownToLine, path: "/agent-deposit" },
+  { label: "Withdraw to M-Pesa", icon: ArrowUpFromLine, path: "/withdraw-mpesa" },
+  { label: "Withdraw to Wallet", icon: ArrowLeftRight, path: "/withdraw" },
   { label: "Transfer", icon: ArrowLeftRight, path: "/transfer" },
   { label: "Statements", icon: FileText, path: "/statements" },
   { label: "Profile & KYC", icon: UserCircle, path: "/profile" },
@@ -56,7 +62,7 @@ export function Sidebar() {
 
   const isAdmin = user.role === "admin";
   const navItems = isAdmin ? adminNavItems : user.role === "agent" ? agentNavItems : userNavItems;
-  const subtitle = isAdmin ? "Admin Dashboard" : "Personal Account";
+  const subtitle = isAdmin ? "Admin Dashboard" : user.role === "agent" ? "Agent Account" : "Personal Account";
 
   return (
     <aside className="w-[280px] min-h-screen bg-sidebar flex flex-col shrink-0">
@@ -85,7 +91,7 @@ export function Sidebar() {
       )}
 
       {/* Navigation */}
-      <nav className="flex-1 px-3 space-y-1">
+      <nav className="flex-1 px-3 space-y-1 overflow-y-auto">
         {navItems.map((item) => {
           const active = location.pathname === item.path;
           return (

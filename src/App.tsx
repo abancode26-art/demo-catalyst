@@ -12,6 +12,11 @@ import Withdraw from "./pages/Withdraw";
 import Transfer from "./pages/Transfer";
 import Statements from "./pages/Statements";
 import ProfileKYC from "./pages/ProfileKYC";
+import BuyAirtime from "./pages/BuyAirtime";
+import SendMoney from "./pages/SendMoney";
+import WithdrawToAgent from "./pages/WithdrawToAgent";
+import WithdrawToMpesa from "./pages/WithdrawToMpesa";
+import AgentDeposit from "./pages/AgentDeposit";
 import AdminUsers from "./pages/admin/AdminUsers";
 import AdminAgents from "./pages/admin/AdminAgents";
 import AdminKYC from "./pages/admin/AdminKYC";
@@ -45,6 +50,11 @@ const App = () => (
             <Route path="/deposit" element={<ProtectedRoute><Deposit /></ProtectedRoute>} />
             <Route path="/withdraw" element={<ProtectedRoute><Withdraw /></ProtectedRoute>} />
             <Route path="/transfer" element={<ProtectedRoute agentOnly><Transfer /></ProtectedRoute>} />
+            <Route path="/buy-airtime" element={<ProtectedRoute><BuyAirtime /></ProtectedRoute>} />
+            <Route path="/send-money" element={<ProtectedRoute><SendMoney /></ProtectedRoute>} />
+            <Route path="/withdraw-agent" element={<ProtectedRoute><WithdrawToAgent /></ProtectedRoute>} />
+            <Route path="/withdraw-mpesa" element={<ProtectedRoute><WithdrawToMpesa /></ProtectedRoute>} />
+            <Route path="/agent-deposit" element={<ProtectedRoute agentOnly><AgentDeposit /></ProtectedRoute>} />
             <Route path="/statements" element={<ProtectedRoute><Statements /></ProtectedRoute>} />
             <Route path="/profile" element={<ProtectedRoute><ProfileKYC /></ProtectedRoute>} />
             <Route path="/admin" element={<ProtectedRoute adminOnly><AdminDashboard /></ProtectedRoute>} />

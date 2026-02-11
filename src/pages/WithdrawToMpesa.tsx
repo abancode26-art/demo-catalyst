@@ -10,7 +10,7 @@ import { Label } from "@/components/ui/label";
 import { toast } from "sonner";
 import { calculateFee, generateTransactionId } from "@/lib/demo-data";
 
-export default function Withdraw() {
+export default function WithdrawToMpesa() {
   const { user, processTransaction } = useAuth();
   const [amount, setAmount] = useState("");
   const [showConfirm, setShowConfirm] = useState(false);
@@ -23,14 +23,8 @@ export default function Withdraw() {
   const fee = val > 0 ? calculateFee(val, "withdrawal") : 0;
 
   const handleWithdraw = () => {
-    if (!val || val <= 0) {
-      toast.error("Enter a valid amount");
-      return;
-    }
-    if (val + fee > user.balance) {
-      toast.error("Insufficient balance");
-      return;
-    }
+    if (!val || val <= 0) { toast.error("Enter a valid amount"); return; }
+    if (val + fee > user.balance) { toast.error("Insufficient balance"); return; }
     setShowConfirm(true);
   };
 
@@ -38,7 +32,7 @@ export default function Withdraw() {
     title: "Confirm M-Pesa Withdrawal",
     details: [
       { label: "M-Pesa Name", value: user.name },
-      { label: "Phone", value: user.phone },
+      { label: "Phone Number", value: user.phone },
       { label: "Amount", value: `KES ${val.toLocaleString()}` },
       { label: "Fee", value: `KES ${fee.toLocaleString()}` },
       { label: "Total Deducted", value: `KES ${(val + fee).toLocaleString()}` },
@@ -61,7 +55,7 @@ export default function Withdraw() {
       reference: ref,
     });
     setReceipt({
-      title: `KES ${val.toLocaleString()} Withdrawn`,
+      title: `KES ${val.toLocaleString()} Sent to M-Pesa`,
       items: [
         { label: "Phone", value: user.phone },
         { label: "Amount", value: `KES ${val.toLocaleString()}` },
@@ -74,30 +68,24 @@ export default function Withdraw() {
   };
 
   return (
-    <DashboardLayout title="Withdraw Funds">
+    <DashboardLayout title="Withdraw to M-Pesa">
       <div className="page-container">
         <div className="max-w-xl mx-auto form-card">
-          <h2 className="text-xl font-semibold text-foreground mb-1">
-            Withdraw to M-Pesa
-          </h2>
+          <h2 className="text-xl font-semibold text-foreground mb-1">Withdraw to M-Pesa</h2>
           <p className="text-sm text-muted-foreground mb-6">
-            Available balance: <span className="font-bold text-foreground">KES {user.balance.toLocaleString()}</span>
+            Balance: <span className="font-bold text-foreground">KES {user.balance.toLocaleString()}</span>
           </p>
 
-          <div className="space-y-6">
-            {/* Amount */}
+          <div className="space-y-5">
+            <div>
+              <Label className="text-sm font-semibold mb-2 block">M-Pesa Phone Number</Label>
+              <Input value={user.phone} readOnly className="bg-muted" />
+              <p className="text-xs text-muted-foreground mt-1">Withdrawal will be sent to your registered number</p>
+            </div>
             <div>
               <Label className="text-sm font-semibold mb-2 block">Amount (KES)</Label>
-              <Input
-                type="number"
-                placeholder="0.00"
-                value={amount}
-                onChange={(e) => setAmount(e.target.value)}
-                className="text-center text-lg"
-              />
+              <Input type="number" placeholder="0.00" value={amount} onChange={(e) => setAmount(e.target.value)} className="text-center text-lg" />
             </div>
-
-            {/* Fee breakdown */}
             {val > 0 && (
               <div className="bg-muted rounded-lg p-4 space-y-2 text-sm">
                 <div className="flex justify-between">
@@ -114,12 +102,7 @@ export default function Withdraw() {
                 </div>
               </div>
             )}
-
-            <Button
-              onClick={handleWithdraw}
-              disabled={!amount}
-              className="w-full"
-            >
+            <Button onClick={handleWithdraw} disabled={!amount} className="w-full">
               Withdraw to M-Pesa
             </Button>
           </div>

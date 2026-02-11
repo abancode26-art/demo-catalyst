@@ -2,6 +2,16 @@ import React, { createContext, useContext, useState, useCallback } from "react";
 import { DemoUser, DEMO_USERS, Transaction, DEMO_TRANSACTIONS, generateTransactionId, calculateFee, STATEMENT_DOWNLOAD_FEE } from "@/lib/demo-data";
 import { toast } from "sonner";
 
+interface ProcessTransactionInput {
+  type: Transaction["type"];
+  method?: "mpesa" | "card";
+  amount: number;
+  fee: number;
+  reference: string;
+  recipientPhone?: string;
+  targetUserId?: string;
+}
+
 interface AuthContextType {
   user: DemoUser | null;
   transactions: Transaction[];
@@ -13,6 +23,7 @@ interface AuthContextType {
   chargeStatementDownload: () => boolean;
   allUsers: DemoUser[];
   updateUser: (userId: string, updates: Partial<DemoUser>) => void;
+  processTransaction: (input: ProcessTransactionInput) => void;
 }
 
 const AuthContext = createContext<AuthContextType | null>(null);
@@ -130,6 +141,70 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     toast.success(`KES ${amount.toLocaleString()} sent to ${recipient.name}`);
   }, [user, users]);
 
+  const processTransaction = useCallback((input: ProcessTransactionInput) => {
+    if (!user) return;
+    const txn: Transaction = {
+      id: `txn-${Date.now()}`,
+      date: new Date().toISOString().slice(0, 16).replace("T", " "),
+      userId: user.id,
+      userName: user.name,
+      type: input.type,
+      method: input.method,
+      amount: input.amount,
+      fee: input.fee,
+      status: "completed",
+      reference: input.reference,
+    };
+    setTransactions((prev) => [txn, ...prev]);
+
+    let balanceChange = 0;
+    if (input.type === "deposit") {
+      // If agent depositing to a target user
+      if (input.targetUserId) {
+        setUsers((prev) =>
+          prev.map((u) =>
+            u.id === input.targetUserId
+              ? { ...u, balance: u.balance + input.amount, totalDeposits: u.totalDeposits + input.amount }
+              : u
+          )
+        );
+        toast.success(`KES ${input.amount.toLocaleString()} deposited successfully`);
+        return;
+      }
+      balanceChange = input.amount - input.fee;
+    } else if (input.type === "withdrawal" || input.type === "send_money" || input.type === "airtime" || input.type === "transfer") {
+      balanceChange = -(input.amount + input.fee);
+    }
+
+    const updatedUser = {
+      ...user,
+      balance: user.balance + balanceChange,
+      totalDeposits: input.type === "deposit" ? user.totalDeposits + input.amount : user.totalDeposits,
+      totalWithdrawn: input.type === "withdrawal" ? user.totalWithdrawn + input.amount : user.totalWithdrawn,
+      totalTransfers: (input.type === "transfer" || input.type === "send_money") ? user.totalTransfers + input.amount : user.totalTransfers,
+    };
+    setUser(updatedUser);
+    setUsers((prev) => prev.map((u) => (u.id === user.id ? updatedUser : u)));
+
+    // Credit recipient for send_money
+    if (input.type === "send_money" && input.recipientPhone) {
+      const recipient = users.find((u) => u.phone === input.recipientPhone);
+      if (recipient) {
+        setUsers((prev) =>
+          prev.map((u) =>
+            u.id === recipient.id ? { ...u, balance: u.balance + input.amount } : u
+          )
+        );
+      }
+    }
+
+    const typeLabel = input.type === "airtime" ? "Airtime purchased" :
+      input.type === "send_money" ? "Money sent" :
+      input.type === "withdrawal" ? "Withdrawal" :
+      input.type === "deposit" ? "Deposit" : "Transaction";
+    toast.success(`${typeLabel} — KES ${input.amount.toLocaleString()}`);
+  }, [user, users]);
+
   const chargeStatementDownload = useCallback((): boolean => {
     if (!user) return false;
     if (user.balance < STATEMENT_DOWNLOAD_FEE) {
@@ -166,7 +241,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   return (
     <AuthContext.Provider
-      value={{ user, transactions, login, logout, deposit, withdraw, transfer, chargeStatementDownload, allUsers: users, updateUser }}
+      value={{ user, transactions, login, logout, deposit, withdraw, transfer, chargeStatementDownload, allUsers: users, updateUser, processTransaction }}
     >
       {children}
     </AuthContext.Provider>

@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useMemo } from "react";
 import { useAuth } from "@/contexts/AuthContext";
 import { DashboardLayout } from "@/components/layout/DashboardLayout";
 import { PINDialog } from "@/components/PINDialog";
@@ -10,12 +10,18 @@ import { Label } from "@/components/ui/label";
 import { toast } from "sonner";
 import { calculateFee, generateTransactionId } from "@/lib/demo-data";
 
-export default function Withdraw() {
-  const { user, processTransaction } = useAuth();
+export default function WithdrawToAgent() {
+  const { user, allUsers, processTransaction } = useAuth();
+  const [agentNumber, setAgentNumber] = useState("");
   const [amount, setAmount] = useState("");
   const [showConfirm, setShowConfirm] = useState(false);
   const [showPIN, setShowPIN] = useState(false);
   const [receipt, setReceipt] = useState<ReceiptData | null>(null);
+
+  const agent = useMemo(
+    () => allUsers.find((u) => u.phone === agentNumber && u.role === "agent"),
+    [agentNumber, allUsers]
+  );
 
   if (!user) return null;
 
@@ -23,22 +29,19 @@ export default function Withdraw() {
   const fee = val > 0 ? calculateFee(val, "withdrawal") : 0;
 
   const handleWithdraw = () => {
-    if (!val || val <= 0) {
-      toast.error("Enter a valid amount");
-      return;
-    }
-    if (val + fee > user.balance) {
-      toast.error("Insufficient balance");
-      return;
-    }
+    if (!val || val <= 0) { toast.error("Enter a valid amount"); return; }
+    if (!agentNumber) { toast.error("Enter agent number"); return; }
+    if (!agent) { toast.error("Agent not found"); return; }
+    if (val + fee > user.balance) { toast.error("Insufficient balance"); return; }
     setShowConfirm(true);
   };
 
   const confirmInfo: ConfirmInfo = {
-    title: "Confirm M-Pesa Withdrawal",
+    title: "Confirm Withdrawal to Agent",
     details: [
-      { label: "M-Pesa Name", value: user.name },
-      { label: "Phone", value: user.phone },
+      { label: "Agent Name", value: agent?.name || "-" },
+      { label: "Agent ID", value: agent?.walletId || "-" },
+      { label: "Agent Number", value: agentNumber },
       { label: "Amount", value: `KES ${val.toLocaleString()}` },
       { label: "Fee", value: `KES ${fee.toLocaleString()}` },
       { label: "Total Deducted", value: `KES ${(val + fee).toLocaleString()}` },
@@ -63,7 +66,8 @@ export default function Withdraw() {
     setReceipt({
       title: `KES ${val.toLocaleString()} Withdrawn`,
       items: [
-        { label: "Phone", value: user.phone },
+        { label: "Agent", value: agent?.name || agentNumber },
+        { label: "Agent ID", value: agent?.walletId || "-" },
         { label: "Amount", value: `KES ${val.toLocaleString()}` },
         { label: "Fee", value: `KES ${fee.toLocaleString()}` },
         { label: "Status", value: "Successful" },
@@ -71,33 +75,36 @@ export default function Withdraw() {
       reference: ref,
     });
     setAmount("");
+    setAgentNumber("");
   };
 
   return (
-    <DashboardLayout title="Withdraw Funds">
+    <DashboardLayout title="Withdraw to Agent">
       <div className="page-container">
         <div className="max-w-xl mx-auto form-card">
-          <h2 className="text-xl font-semibold text-foreground mb-1">
-            Withdraw to M-Pesa
-          </h2>
+          <h2 className="text-xl font-semibold text-foreground mb-1">Withdraw to Agent</h2>
           <p className="text-sm text-muted-foreground mb-6">
-            Available balance: <span className="font-bold text-foreground">KES {user.balance.toLocaleString()}</span>
+            Balance: <span className="font-bold text-foreground">KES {user.balance.toLocaleString()}</span>
           </p>
 
-          <div className="space-y-6">
-            {/* Amount */}
+          <div className="space-y-5">
+            <div>
+              <Label className="text-sm font-semibold mb-2 block">Agent Number</Label>
+              <Input placeholder="07XXXXXXXX" value={agentNumber} onChange={(e) => setAgentNumber(e.target.value)} />
+              {agent && (
+                <div className="mt-2 bg-muted rounded-lg p-3 text-sm space-y-1">
+                  <p className="font-medium text-foreground">{agent.name}</p>
+                  <p className="text-muted-foreground">ID: {agent.walletId}</p>
+                </div>
+              )}
+              {agentNumber.length >= 10 && !agent && (
+                <p className="text-sm text-destructive mt-1">Agent not found</p>
+              )}
+            </div>
             <div>
               <Label className="text-sm font-semibold mb-2 block">Amount (KES)</Label>
-              <Input
-                type="number"
-                placeholder="0.00"
-                value={amount}
-                onChange={(e) => setAmount(e.target.value)}
-                className="text-center text-lg"
-              />
+              <Input type="number" placeholder="0.00" value={amount} onChange={(e) => setAmount(e.target.value)} className="text-center text-lg" />
             </div>
-
-            {/* Fee breakdown */}
             {val > 0 && (
               <div className="bg-muted rounded-lg p-4 space-y-2 text-sm">
                 <div className="flex justify-between">
@@ -114,13 +121,8 @@ export default function Withdraw() {
                 </div>
               </div>
             )}
-
-            <Button
-              onClick={handleWithdraw}
-              disabled={!amount}
-              className="w-full"
-            >
-              Withdraw to M-Pesa
+            <Button onClick={handleWithdraw} disabled={!amount || !agentNumber} className="w-full">
+              Withdraw
             </Button>
           </div>
         </div>
