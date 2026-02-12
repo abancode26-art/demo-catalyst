@@ -13,8 +13,8 @@ import {
   FileText,
   AlertTriangle,
   TrendingUp,
+  Globe,
 } from "lucide-react";
-import { Badge } from "@/components/ui/badge";
 
 export default function AdminDashboard() {
   const { transactions, allUsers } = useAuth();
@@ -31,6 +31,7 @@ export default function AdminDashboard() {
     { label: "Manage Users", icon: Users, path: "/admin/users" },
     { label: "Manage Agents", icon: UserCheck, path: "/admin/agents" },
     { label: "KYC Approvals", icon: ClipboardList, path: "/admin/kyc", badge: "5 Pending" },
+    { label: "Currencies", icon: Globe, path: "/admin/currencies" },
     { label: "Fees & Settings", icon: Settings, path: "/admin/fees" },
     { label: "Audit Logs", icon: FileText, path: "/admin/audit" },
   ];
@@ -73,7 +74,7 @@ export default function AdminDashboard() {
         </div>
 
         {/* Quick Actions */}
-        <div className="grid grid-cols-2 lg:grid-cols-5 gap-4">
+        <div className="grid grid-cols-2 lg:grid-cols-6 gap-4">
           {quickActions.map((a) => (
             <button key={a.label} onClick={() => navigate(a.path)} className="action-card relative">
               {a.badge && (
@@ -109,7 +110,7 @@ export default function AdminDashboard() {
                     <td className="py-3 text-foreground">{txn.date.split(" ")[0]}</td>
                     <td className="py-3 font-medium text-foreground">{txn.userName}</td>
                     <td className="py-3 text-foreground capitalize">
-                      {txn.type === "kyc_update" ? "KYC Update" : txn.type}
+                      {txn.type === "kyc_update" ? "KYC Update" : txn.type.replace("_", " ")}
                     </td>
                     <td className={`py-3 font-medium ${txn.type === "deposit" ? "text-success" : "text-foreground"}`}>
                       {txn.amount > 0 ? `${txn.type === "deposit" ? "+" : "-"}KES ${txn.amount.toLocaleString()}` : ""}

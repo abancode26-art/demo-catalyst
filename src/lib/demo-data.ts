@@ -1,5 +1,12 @@
 export type UserRole = "user" | "agent" | "admin";
 
+export interface Currency {
+  code: string;
+  name: string;
+  symbol: string;
+  enabled: boolean;
+}
+
 export interface DemoUser {
   id: string;
   phone: string;
@@ -12,6 +19,16 @@ export interface DemoUser {
   totalWithdrawn: number;
   totalTransfers: number;
   kycStatus: "pending" | "approved" | "rejected";
+  currency: string;
+}
+
+export interface Notification {
+  id: string;
+  userId: string;
+  date: string;
+  message: string;
+  type: string;
+  read: boolean;
 }
 
 export interface Transaction {
@@ -25,6 +42,9 @@ export interface Transaction {
   fee: number;
   status: "completed" | "successful" | "pending" | "failed";
   reference: string;
+  network?: string;
+  recipientWallet?: string;
+  senderWallet?: string;
 }
 
 export interface FeeConfig {
@@ -41,6 +61,15 @@ export interface CommissionConfig {
   rate: number;
 }
 
+export const DEMO_CURRENCIES: Currency[] = [
+  { code: "KES", name: "Kenyan Shilling", symbol: "KES", enabled: true },
+  { code: "USD", name: "US Dollar", symbol: "USD", enabled: true },
+  { code: "GBP", name: "British Pound", symbol: "GBP", enabled: true },
+  { code: "EUR", name: "Euro", symbol: "EUR", enabled: true },
+  { code: "CAD", name: "Canadian Dollar", symbol: "CAD", enabled: true },
+  { code: "NGN", name: "Nigerian Naira", symbol: "NGN", enabled: false },
+];
+
 export const DEMO_USERS: DemoUser[] = [
   {
     id: "usr-001",
@@ -48,12 +77,13 @@ export const DEMO_USERS: DemoUser[] = [
     password: "user1234",
     name: "John Doe",
     role: "user",
-    walletId: "WLT-2024-0001",
+    walletId: "7770001",
     balance: 15000,
     totalDeposits: 45200,
     totalWithdrawn: 28300,
     totalTransfers: 12500,
     kycStatus: "approved",
+    currency: "KES",
   },
   {
     id: "usr-002",
@@ -61,12 +91,13 @@ export const DEMO_USERS: DemoUser[] = [
     password: "agent1234",
     name: "Sarah Kamau",
     role: "agent",
-    walletId: "WLT-2024-0002",
+    walletId: "8880001",
     balance: 85000,
     totalDeposits: 250000,
     totalWithdrawn: 180000,
     totalTransfers: 95000,
     kycStatus: "approved",
+    currency: "KES",
   },
   {
     id: "usr-003",
@@ -74,12 +105,13 @@ export const DEMO_USERS: DemoUser[] = [
     password: "admin1234",
     name: "Admin",
     role: "admin",
-    walletId: "WLT-2024-0003",
+    walletId: "7770003",
     balance: 0,
     totalDeposits: 0,
     totalWithdrawn: 0,
     totalTransfers: 0,
     kycStatus: "approved",
+    currency: "KES",
   },
 ];
 
@@ -114,7 +146,7 @@ export const DEMO_TRANSACTIONS: Transaction[] = [
     userId: "usr-002",
     userName: "Sarah Kamau",
     type: "deposit",
-    method: "card",
+    method: "mpesa",
     amount: 50000,
     fee: 750,
     status: "successful",
@@ -223,3 +255,8 @@ export function calculateFee(amount: number, type: "deposit" | "withdrawal" | "t
 }
 
 export const STATEMENT_DOWNLOAD_FEE = 50;
+
+export function generateWalletId(role: "user" | "agent", seq: number): string {
+  const prefix = role === "agent" ? "888" : "777";
+  return `${prefix}${String(seq).padStart(4, "0")}`;
+}

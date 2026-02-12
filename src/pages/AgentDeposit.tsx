@@ -21,8 +21,8 @@ export default function AgentDeposit() {
   const [receipt, setReceipt] = useState<ReceiptData | null>(null);
 
   const targetUser = useMemo(
-    () => allUsers.find((u) => u.walletId === walletNumber),
-    [walletNumber, allUsers]
+    () => allUsers.find((u) => u.walletId === walletNumber && u.id !== user?.id),
+    [walletNumber, allUsers, user]
   );
 
   if (!user) return null;
@@ -33,6 +33,7 @@ export default function AgentDeposit() {
     if (!val || val <= 0) { toast.error("Enter a valid amount"); return; }
     if (!walletNumber) { toast.error("Enter wallet number"); return; }
     if (!targetUser) { toast.error("Wallet not found"); return; }
+    if (method === "wallet" && val > user.balance) { toast.error("Insufficient agent balance"); return; }
     setShowConfirm(true);
   };
 
@@ -43,7 +44,9 @@ export default function AgentDeposit() {
       { label: "Phone Number", value: targetUser?.phone || "-" },
       { label: "Wallet Number", value: walletNumber },
       { label: "Deposit Method", value: method === "mpesa" ? "M-Pesa" : "Wallet" },
-      { label: "Amount", value: `KES ${val.toLocaleString()}` },
+      { label: "Agent Name", value: user.name },
+      { label: "Agent Wallet", value: user.walletId },
+      { label: "Amount", value: `${user.currency} ${val.toLocaleString()}` },
     ],
   };
 
@@ -62,14 +65,19 @@ export default function AgentDeposit() {
       fee: 0,
       reference: ref,
       targetUserId: targetUser?.id,
+      recipientWallet: targetUser?.walletId,
     });
     setReceipt({
-      title: `KES ${val.toLocaleString()} Deposited`,
+      title: `${user.currency} ${val.toLocaleString()} Deposited`,
       items: [
         { label: "User", value: targetUser?.name || walletNumber },
-        { label: "Phone", value: targetUser?.phone || "-" },
+        { label: "User Phone", value: targetUser?.phone || "-" },
+        { label: "User Wallet", value: targetUser?.walletId || "-" },
+        { label: "Agent", value: user.name },
+        { label: "Agent Wallet", value: user.walletId },
         { label: "Method", value: method === "mpesa" ? "M-Pesa" : "Wallet" },
-        { label: "Amount", value: `KES ${val.toLocaleString()}` },
+        { label: "Amount", value: `${user.currency} ${val.toLocaleString()}` },
+        { label: "Currency", value: user.currency },
         { label: "Status", value: "Successful" },
       ],
       reference: ref,
@@ -84,7 +92,7 @@ export default function AgentDeposit() {
         <div className="max-w-xl mx-auto form-card">
           <h2 className="text-xl font-semibold text-foreground mb-1">Load User Wallet</h2>
           <p className="text-sm text-muted-foreground mb-6">
-            Your balance: <span className="font-bold text-foreground">KES {user.balance.toLocaleString()}</span>
+            Your balance: <span className="font-bold text-foreground">{user.currency} {user.balance.toLocaleString()}</span>
           </p>
 
           <div className="space-y-6">
@@ -110,20 +118,21 @@ export default function AgentDeposit() {
 
             <div>
               <Label className="text-sm font-semibold mb-2 block">User Wallet Number</Label>
-              <Input placeholder="WLT-XXXX-XXXX" value={walletNumber} onChange={(e) => setWalletNumber(e.target.value)} />
+              <Input placeholder="777XXXX" value={walletNumber} onChange={(e) => setWalletNumber(e.target.value)} />
               {targetUser && (
                 <div className="mt-2 bg-muted rounded-lg p-3 text-sm space-y-1">
                   <p className="font-medium text-foreground">{targetUser.name}</p>
                   <p className="text-muted-foreground">Phone: {targetUser.phone}</p>
+                  <p className="text-muted-foreground">Wallet: {targetUser.walletId}</p>
                 </div>
               )}
-              {walletNumber.length >= 8 && !targetUser && (
+              {walletNumber.length >= 7 && !targetUser && (
                 <p className="text-sm text-destructive mt-1">Wallet not found</p>
               )}
             </div>
 
             <div>
-              <Label className="text-sm font-semibold mb-2 block">Amount (KES)</Label>
+              <Label className="text-sm font-semibold mb-2 block">Amount ({user.currency})</Label>
               <Input type="number" placeholder="0.00" value={amount} onChange={(e) => setAmount(e.target.value)} className="text-center text-lg" />
             </div>
 

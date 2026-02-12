@@ -17,6 +17,9 @@ import SendMoney from "./pages/SendMoney";
 import WithdrawToAgent from "./pages/WithdrawToAgent";
 import WithdrawToMpesa from "./pages/WithdrawToMpesa";
 import AgentDeposit from "./pages/AgentDeposit";
+import SellAirtime from "./pages/SellAirtime";
+import SendToWallet from "./pages/SendToWallet";
+import Notifications from "./pages/Notifications";
 import AdminUsers from "./pages/admin/AdminUsers";
 import AdminAgents from "./pages/admin/AdminAgents";
 import AdminKYC from "./pages/admin/AdminKYC";
@@ -24,6 +27,7 @@ import AdminTransactions from "./pages/admin/AdminTransactions";
 import AdminFees from "./pages/admin/AdminFees";
 import AdminAudit from "./pages/admin/AdminAudit";
 import AdminSettings from "./pages/admin/AdminSettings";
+import AdminCurrencies from "./pages/admin/AdminCurrencies";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -51,11 +55,14 @@ const App = () => (
             <Route path="/withdraw" element={<ProtectedRoute><Withdraw /></ProtectedRoute>} />
             <Route path="/transfer" element={<ProtectedRoute agentOnly><Transfer /></ProtectedRoute>} />
             <Route path="/buy-airtime" element={<ProtectedRoute><BuyAirtime /></ProtectedRoute>} />
+            <Route path="/sell-airtime" element={<ProtectedRoute agentOnly><SellAirtime /></ProtectedRoute>} />
             <Route path="/send-money" element={<ProtectedRoute><SendMoney /></ProtectedRoute>} />
+            <Route path="/send-to-wallet" element={<ProtectedRoute agentOnly><SendToWallet /></ProtectedRoute>} />
             <Route path="/withdraw-agent" element={<ProtectedRoute><WithdrawToAgent /></ProtectedRoute>} />
             <Route path="/withdraw-mpesa" element={<ProtectedRoute><WithdrawToMpesa /></ProtectedRoute>} />
             <Route path="/agent-deposit" element={<ProtectedRoute agentOnly><AgentDeposit /></ProtectedRoute>} />
             <Route path="/statements" element={<ProtectedRoute><Statements /></ProtectedRoute>} />
+            <Route path="/notifications" element={<ProtectedRoute><Notifications /></ProtectedRoute>} />
             <Route path="/profile" element={<ProtectedRoute><ProfileKYC /></ProtectedRoute>} />
             <Route path="/admin" element={<ProtectedRoute adminOnly><AdminDashboard /></ProtectedRoute>} />
             <Route path="/admin/users" element={<ProtectedRoute adminOnly><AdminUsers /></ProtectedRoute>} />
@@ -63,6 +70,7 @@ const App = () => (
             <Route path="/admin/kyc" element={<ProtectedRoute adminOnly><AdminKYC /></ProtectedRoute>} />
             <Route path="/admin/transactions" element={<ProtectedRoute adminOnly><AdminTransactions /></ProtectedRoute>} />
             <Route path="/admin/fees" element={<ProtectedRoute adminOnly><AdminFees /></ProtectedRoute>} />
+            <Route path="/admin/currencies" element={<ProtectedRoute adminOnly><AdminCurrencies /></ProtectedRoute>} />
             <Route path="/admin/audit" element={<ProtectedRoute adminOnly><AdminAudit /></ProtectedRoute>} />
             <Route path="/admin/settings" element={<ProtectedRoute adminOnly><AdminSettings /></ProtectedRoute>} />
             <Route path="*" element={<NotFound />} />

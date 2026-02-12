@@ -5,7 +5,6 @@ import {
   Wallet,
   ArrowDownToLine,
   ArrowUpFromLine,
-  ArrowLeftRight,
   FileText,
   Smartphone,
   Send,
@@ -27,7 +26,7 @@ export default function UserDashboard() {
     { label: "Withdraw to Agent", icon: UserCheck, path: "/withdraw-agent" },
     { label: "Withdraw to M-Pesa", icon: ArrowUpFromLine, path: "/withdraw-mpesa" },
     { label: "Send Money", icon: Send, path: "/send-money" },
-    { label: "Deposit", icon: ArrowDownToLine, path: "/deposit" },
+    { label: "Load Wallet", icon: ArrowDownToLine, path: "/deposit" },
     { label: "Statements", icon: FileText, path: "/statements" },
   ];
 
@@ -40,9 +39,10 @@ export default function UserDashboard() {
             <div>
               <p className="text-xs text-muted-foreground font-medium">Wallet Balance</p>
               <p className="text-3xl font-bold text-foreground mt-1">
-                KES {user.balance.toLocaleString()}
+                {user.currency} {user.balance.toLocaleString()}
               </p>
-              <p className="text-xs text-muted-foreground mt-2">Wallet ID: {user.walletId}</p>
+              <p className="text-xs text-muted-foreground mt-2">Wallet Number: {user.walletId}</p>
+              <p className="text-xs text-muted-foreground">Currency: {user.currency}</p>
             </div>
             <div className="h-14 w-14 rounded-full bg-muted flex items-center justify-center">
               <Wallet className="h-7 w-7 text-muted-foreground" />
@@ -75,14 +75,14 @@ export default function UserDashboard() {
                   <div className="h-9 w-9 rounded-full bg-muted flex items-center justify-center">
                     {txn.type === "deposit" && <ArrowDownToLine className="h-4 w-4 text-success" />}
                     {txn.type === "withdrawal" && <ArrowUpFromLine className="h-4 w-4 text-destructive" />}
-                    {(txn.type === "transfer" || txn.type === "send_money") && <ArrowLeftRight className="h-4 w-4 text-primary" />}
+                    {(txn.type === "transfer" || txn.type === "send_money") && <Send className="h-4 w-4 text-primary" />}
                     {txn.type === "airtime" && <Smartphone className="h-4 w-4 text-primary" />}
                     {txn.type === "kyc_update" && <FileText className="h-4 w-4 text-warning" />}
                   </div>
                   <div>
                     <p className="text-sm font-medium text-foreground">
-                      {txn.type === "deposit" ? (txn.method === "mpesa" ? "M-Pesa Deposit" : "Deposit") :
-                       txn.type === "withdrawal" ? (txn.method === "mpesa" ? "M-Pesa Withdrawal" : "Withdrawal") :
+                      {txn.type === "deposit" ? "Wallet Loaded" :
+                       txn.type === "withdrawal" ? "Withdrawal" :
                        txn.type === "transfer" ? "Transfer" :
                        txn.type === "send_money" ? "Send Money" :
                        txn.type === "airtime" ? "Airtime" : "KYC Update"}
@@ -94,7 +94,7 @@ export default function UserDashboard() {
                 </div>
                 <div className="text-right">
                   <p className={`text-sm font-semibold ${txn.type === "deposit" ? "text-success" : (txn.type === "withdrawal" || txn.type === "transfer" || txn.type === "send_money" || txn.type === "airtime") ? "text-destructive" : "text-foreground"}`}>
-                    {txn.type === "deposit" ? "+" : txn.amount ? "-" : ""}KES {txn.amount.toLocaleString()}
+                    {txn.type === "deposit" ? "+" : txn.amount ? "-" : ""}{user.currency} {txn.amount.toLocaleString()}
                   </p>
                   <p className="text-xs text-muted-foreground capitalize">{txn.status}</p>
                 </div>
