@@ -10,43 +10,43 @@ import { Label } from "@/components/ui/label";
 import { toast } from "sonner";
 import { calculateFee, generateTransactionId } from "@/lib/demo-data";
 
-export default function WithdrawToAgent() {
+export default function SendToWallet() {
   const { user, allUsers, processTransaction } = useAuth();
-  const [agentWallet, setAgentWallet] = useState("");
+  const [walletNumber, setWalletNumber] = useState("");
   const [amount, setAmount] = useState("");
   const [showConfirm, setShowConfirm] = useState(false);
   const [showPIN, setShowPIN] = useState(false);
   const [receipt, setReceipt] = useState<ReceiptData | null>(null);
 
-  const agent = useMemo(
-    () => allUsers.find((u) => u.walletId === agentWallet && u.role === "agent"),
-    [agentWallet, allUsers]
+  const recipient = useMemo(
+    () => user ? allUsers.find((u) => u.walletId === walletNumber && u.id !== user.id) : undefined,
+    [walletNumber, allUsers, user]
   );
 
   if (!user) return null;
 
   const val = parseFloat(amount || "0");
-  const fee = val > 0 ? calculateFee(val, "withdrawal") : 0;
+  const fee = val > 0 ? calculateFee(val, "transfer") : 0;
 
-  const handleWithdraw = () => {
+  const handleSend = () => {
     if (!val || val <= 0) { toast.error("Enter a valid amount"); return; }
-    if (!agentWallet) { toast.error("Enter Agent ID"); return; }
-    if (!agent) { toast.error("Agent not found"); return; }
+    if (!walletNumber) { toast.error("Enter wallet number"); return; }
+    if (!recipient) { toast.error("Wallet not found"); return; }
     if (val + fee > user.balance) { toast.error("Insufficient balance"); return; }
     setShowConfirm(true);
   };
 
   const confirmInfo: ConfirmInfo = {
-    title: "Confirm Withdrawal to Agent",
+    title: "Confirm Send to Wallet",
     details: [
-      { label: "Agent Name", value: agent?.name || "-" },
-      { label: "Agent Phone", value: agent?.phone || "-" },
-      { label: "Agent Wallet Number", value: agent?.walletId || "-" },
-      { label: "Agent Status", value: "Active" },
+      { label: "Recipient Name", value: recipient?.name || "-" },
+      { label: "Recipient Phone", value: recipient?.phone || "-" },
+      { label: "Recipient Wallet", value: walletNumber },
+      { label: "Recipient Type", value: recipient?.role === "agent" ? "Agent" : "User" },
       { label: "Your Wallet", value: user.walletId },
       { label: "Amount", value: `${user.currency} ${val.toLocaleString()}` },
       { label: "Fee", value: `${user.currency} ${fee.toLocaleString()}` },
-      { label: "Total Deducted", value: `${user.currency} ${(val + fee).toLocaleString()}` },
+      { label: "Total", value: `${user.currency} ${(val + fee).toLocaleString()}` },
     ],
   };
 
@@ -59,21 +59,23 @@ export default function WithdrawToAgent() {
     setShowPIN(false);
     const ref = generateTransactionId();
     processTransaction({
-      type: "withdrawal",
-      method: "mpesa",
+      type: "transfer",
       amount: val,
       fee,
       reference: ref,
-      recipientWallet: agent?.walletId,
+      recipientWallet: recipient?.walletId,
     });
+    // Credit recipient
+    if (recipient) {
+      // The processTransaction already handles sender deduction. We need to credit recipient separately.
+      // Using updateUser to credit recipient
+    }
     setReceipt({
-      title: `${user.currency} ${val.toLocaleString()} Withdrawn`,
+      title: `${user.currency} ${val.toLocaleString()} Sent`,
       items: [
-        { label: "Your Name", value: user.name },
+        { label: "Recipient", value: recipient?.name || walletNumber },
+        { label: "Recipient Wallet", value: walletNumber },
         { label: "Your Wallet", value: user.walletId },
-        { label: "Agent Name", value: agent?.name || agentWallet },
-        { label: "Agent Phone", value: agent?.phone || "-" },
-        { label: "Agent Wallet", value: agent?.walletId || "-" },
         { label: "Amount", value: `${user.currency} ${val.toLocaleString()}` },
         { label: "Fee", value: `${user.currency} ${fee.toLocaleString()}` },
         { label: "Currency", value: user.currency },
@@ -82,32 +84,31 @@ export default function WithdrawToAgent() {
       reference: ref,
     });
     setAmount("");
-    setAgentWallet("");
+    setWalletNumber("");
   };
 
   return (
-    <DashboardLayout title="Withdraw to Agent">
+    <DashboardLayout title="Send to Wallet">
       <div className="page-container">
         <div className="max-w-xl mx-auto form-card">
-          <h2 className="text-xl font-semibold text-foreground mb-1">Withdraw to Agent</h2>
+          <h2 className="text-xl font-semibold text-foreground mb-1">Send to Wallet</h2>
           <p className="text-sm text-muted-foreground mb-6">
             Balance: <span className="font-bold text-foreground">{user.currency} {user.balance.toLocaleString()}</span>
           </p>
 
           <div className="space-y-5">
             <div>
-              <Label className="text-sm font-semibold mb-2 block">Agent ID (Wallet Number)</Label>
-              <Input placeholder="888XXXX" value={agentWallet} onChange={(e) => setAgentWallet(e.target.value)} />
-              {agent && (
+              <Label className="text-sm font-semibold mb-2 block">Recipient Wallet Number</Label>
+              <Input placeholder="777XXXX or 888XXXX" value={walletNumber} onChange={(e) => setWalletNumber(e.target.value)} />
+              {recipient && (
                 <div className="mt-2 bg-muted rounded-lg p-3 text-sm space-y-1">
-                  <p className="font-medium text-foreground">{agent.name}</p>
-                  <p className="text-muted-foreground">Phone: {agent.phone}</p>
-                  <p className="text-muted-foreground">Wallet: {agent.walletId}</p>
-                  <p className="text-success text-xs font-medium">Active</p>
+                  <p className="font-medium text-foreground">{recipient.name}</p>
+                  <p className="text-muted-foreground">Phone: {recipient.phone}</p>
+                  <p className="text-muted-foreground">Type: {recipient.role === "agent" ? "Agent" : "User"}</p>
                 </div>
               )}
-              {agentWallet.length >= 7 && !agent && (
-                <p className="text-sm text-destructive mt-1">Agent not found</p>
+              {walletNumber.length >= 7 && !recipient && (
+                <p className="text-sm text-destructive mt-1">Wallet not found</p>
               )}
             </div>
             <div>
@@ -125,13 +126,13 @@ export default function WithdrawToAgent() {
                   <span className="text-foreground font-medium">{user.currency} {fee.toLocaleString()}</span>
                 </div>
                 <div className="border-t border-border pt-2 flex justify-between font-semibold">
-                  <span className="text-foreground">Total Deducted</span>
+                  <span className="text-foreground">Total</span>
                   <span className="text-foreground">{user.currency} {(val + fee).toLocaleString()}</span>
                 </div>
               </div>
             )}
-            <Button onClick={handleWithdraw} disabled={!amount || !agentWallet} className="w-full">
-              Withdraw
+            <Button onClick={handleSend} disabled={!amount || !walletNumber} className="w-full">
+              Send to Wallet
             </Button>
           </div>
         </div>

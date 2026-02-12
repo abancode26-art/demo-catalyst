@@ -11,10 +11,12 @@ import { cn } from "@/lib/utils";
 import { toast } from "sonner";
 import { generateTransactionId } from "@/lib/demo-data";
 
+const NETWORKS = ["Safaricom", "Airtel", "Telkom"];
 const AIRTIME_PRESETS = [50, 100, 200, 500, 1000];
 
 export default function BuyAirtime() {
   const { user, processTransaction } = useAuth();
+  const [network, setNetwork] = useState("");
   const [phone, setPhone] = useState("");
   const [amount, setAmount] = useState("");
   const [showConfirm, setShowConfirm] = useState(false);
@@ -25,17 +27,19 @@ export default function BuyAirtime() {
   const val = parseFloat(amount || "0");
 
   const handleBuy = () => {
+    if (!network) { toast.error("Select a network"); return; }
+    if (!phone) { toast.error("Enter phone number"); return; }
     if (!val || val <= 0) { toast.error("Select or enter an amount"); return; }
     if (val > user.balance) { toast.error("Insufficient balance"); return; }
-    if (!phone) { toast.error("Enter phone number"); return; }
     setShowConfirm(true);
   };
 
   const confirmInfo: ConfirmInfo = {
     title: "Confirm Airtime Purchase",
     details: [
+      { label: "Network", value: network },
       { label: "Phone Number", value: phone },
-      { label: "Amount", value: `KES ${val.toLocaleString()}` },
+      { label: "Amount", value: `${user.currency} ${val.toLocaleString()}` },
       { label: "Source", value: `Wallet (${user.walletId})` },
     ],
   };
@@ -53,12 +57,15 @@ export default function BuyAirtime() {
       amount: val,
       fee: 0,
       reference: ref,
+      network,
     });
     setReceipt({
-      title: `KES ${val.toLocaleString()} Airtime`,
+      title: `${user.currency} ${val.toLocaleString()} Airtime`,
       items: [
+        { label: "Network", value: network },
         { label: "Phone Number", value: phone },
-        { label: "Amount", value: `KES ${val.toLocaleString()}` },
+        { label: "Amount", value: `${user.currency} ${val.toLocaleString()}` },
+        { label: "Wallet Number", value: user.walletId },
         { label: "Status", value: "Successful" },
       ],
       reference: ref,
@@ -72,17 +79,38 @@ export default function BuyAirtime() {
         <div className="max-w-xl mx-auto form-card">
           <h2 className="text-xl font-semibold text-foreground mb-1">Buy Airtime</h2>
           <p className="text-sm text-muted-foreground mb-6">
-            Balance: <span className="font-bold text-foreground">KES {user.balance.toLocaleString()}</span>
+            Balance: <span className="font-bold text-foreground">{user.currency} {user.balance.toLocaleString()}</span>
           </p>
 
           <div className="space-y-6">
+            {/* Network Selection */}
+            <div>
+              <Label className="text-sm font-semibold mb-3 block">Select Network</Label>
+              <div className="flex gap-3">
+                {NETWORKS.map((n) => (
+                  <button
+                    key={n}
+                    onClick={() => setNetwork(n)}
+                    className={cn(
+                      "flex-1 py-3 px-4 rounded-lg border-2 text-sm font-medium transition-all",
+                      network === n
+                        ? "border-primary text-primary bg-accent"
+                        : "border-border text-foreground hover:border-muted-foreground"
+                    )}
+                  >
+                    {n}
+                  </button>
+                ))}
+              </div>
+            </div>
+
             <div>
               <Label className="text-sm font-semibold mb-2 block">Phone Number</Label>
               <Input value={phone} onChange={(e) => setPhone(e.target.value)} placeholder="07XXXXXXXX" />
             </div>
 
             <div>
-              <Label className="text-sm font-semibold mb-2 block">Amount (KES)</Label>
+              <Label className="text-sm font-semibold mb-2 block">Amount ({user.currency})</Label>
               <Input type="number" placeholder="0" value={amount} onChange={(e) => setAmount(e.target.value)} className="text-center text-lg" />
               <div className="flex gap-2 mt-3 flex-wrap">
                 {AIRTIME_PRESETS.map((p) => (
@@ -102,7 +130,7 @@ export default function BuyAirtime() {
               </div>
             </div>
 
-            <Button onClick={handleBuy} disabled={!amount} className="w-full">
+            <Button onClick={handleBuy} disabled={!amount || !network} className="w-full">
               Buy Airtime
             </Button>
           </div>

@@ -18,27 +18,31 @@ import {
   ChevronRight,
   Smartphone,
   Send,
+  Bell,
+  Globe,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 const userNavItems = [
   { label: "Dashboard", icon: LayoutDashboard, path: "/dashboard" },
+  { label: "Load Wallet", icon: ArrowDownToLine, path: "/deposit" },
   { label: "Buy Airtime", icon: Smartphone, path: "/buy-airtime" },
   { label: "Withdraw to Agent", icon: UserCheck, path: "/withdraw-agent" },
   { label: "Withdraw to M-Pesa", icon: ArrowUpFromLine, path: "/withdraw-mpesa" },
   { label: "Send Money", icon: Send, path: "/send-money" },
-  { label: "Deposit", icon: ArrowDownToLine, path: "/deposit" },
   { label: "Statements", icon: FileText, path: "/statements" },
+  { label: "Notifications", icon: Bell, path: "/notifications" },
   { label: "Profile & KYC", icon: UserCircle, path: "/profile" },
 ];
 
 const agentNavItems = [
   { label: "Dashboard", icon: LayoutDashboard, path: "/dashboard" },
   { label: "Deposit to User", icon: ArrowDownToLine, path: "/agent-deposit" },
+  { label: "Sell Airtime", icon: Smartphone, path: "/sell-airtime" },
+  { label: "Send to Wallet", icon: ArrowLeftRight, path: "/send-to-wallet" },
   { label: "Withdraw to M-Pesa", icon: ArrowUpFromLine, path: "/withdraw-mpesa" },
-  { label: "Withdraw to Wallet", icon: ArrowLeftRight, path: "/withdraw" },
-  { label: "Transfer", icon: ArrowLeftRight, path: "/transfer" },
   { label: "Statements", icon: FileText, path: "/statements" },
+  { label: "Notifications", icon: Bell, path: "/notifications" },
   { label: "Profile & KYC", icon: UserCircle, path: "/profile" },
 ];
 
@@ -49,6 +53,7 @@ const adminNavItems = [
   { label: "KYC Approvals", icon: ClipboardList, path: "/admin/kyc" },
   { label: "Transactions", icon: ScrollText, path: "/admin/transactions" },
   { label: "Fees & Commissions", icon: DollarSign, path: "/admin/fees" },
+  { label: "Currencies", icon: Globe, path: "/admin/currencies" },
   { label: "Audit Logs", icon: FileText, path: "/admin/audit" },
   { label: "System Settings", icon: Settings, path: "/admin/settings" },
 ];
@@ -81,7 +86,8 @@ export function Sidebar() {
       {!isAdmin && (
         <div className="px-5 pb-4">
           <div className="font-semibold text-sidebar-user text-sm">{user.name}</div>
-          <div className="text-xs text-sidebar-sublabel">ID: {user.walletId}</div>
+          <div className="text-xs text-sidebar-sublabel">Wallet: {user.walletId}</div>
+          <div className="text-xs text-sidebar-sublabel">Currency: {user.currency}</div>
         </div>
       )}
       {isAdmin && (

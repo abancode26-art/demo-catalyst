@@ -39,11 +39,13 @@ export default function SendMoney() {
   const confirmInfo: ConfirmInfo = {
     title: "Confirm Send Money",
     details: [
-      { label: "Recipient", value: recipient?.name || recipientPhone },
-      { label: "Phone", value: recipientPhone },
-      { label: "Amount", value: `KES ${val.toLocaleString()}` },
-      { label: "Fee", value: `KES ${fee.toLocaleString()}` },
-      { label: "Total", value: `KES ${(val + fee).toLocaleString()}` },
+      { label: "Recipient Name", value: recipient?.name || recipientPhone },
+      { label: "Recipient Phone", value: recipientPhone },
+      { label: "Recipient Wallet", value: recipient?.walletId || "-" },
+      { label: "Your Wallet", value: user.walletId },
+      { label: "Amount", value: `${user.currency} ${val.toLocaleString()}` },
+      { label: "Fee", value: `${user.currency} ${fee.toLocaleString()}` },
+      { label: "Total", value: `${user.currency} ${(val + fee).toLocaleString()}` },
     ],
   };
 
@@ -61,13 +63,17 @@ export default function SendMoney() {
       fee,
       reference: ref,
       recipientPhone,
+      recipientWallet: recipient?.walletId,
     });
     setReceipt({
-      title: `KES ${val.toLocaleString()} Sent`,
+      title: `${user.currency} ${val.toLocaleString()} Sent`,
       items: [
         { label: "Recipient", value: recipient?.name || recipientPhone },
-        { label: "Amount", value: `KES ${val.toLocaleString()}` },
-        { label: "Fee", value: `KES ${fee.toLocaleString()}` },
+        { label: "Recipient Wallet", value: recipient?.walletId || "-" },
+        { label: "Your Wallet", value: user.walletId },
+        { label: "Amount", value: `${user.currency} ${val.toLocaleString()}` },
+        { label: "Fee", value: `${user.currency} ${fee.toLocaleString()}` },
+        { label: "Currency", value: user.currency },
         { label: "Status", value: "Successful" },
       ],
       reference: ref,
@@ -82,7 +88,7 @@ export default function SendMoney() {
         <div className="max-w-xl mx-auto form-card">
           <h2 className="text-xl font-semibold text-foreground mb-1">Send Money</h2>
           <p className="text-sm text-muted-foreground mb-6">
-            Balance: <span className="font-bold text-foreground">KES {user.balance.toLocaleString()}</span>
+            Balance: <span className="font-bold text-foreground">{user.currency} {user.balance.toLocaleString()}</span>
           </p>
 
           <div className="space-y-5">
@@ -90,29 +96,32 @@ export default function SendMoney() {
               <Label className="text-sm font-semibold mb-2 block">Recipient Phone Number</Label>
               <Input placeholder="07XXXXXXXX" value={recipientPhone} onChange={(e) => setRecipientPhone(e.target.value)} />
               {recipient && (
-                <p className="text-sm text-success mt-1 font-medium">{recipient.name}</p>
+                <div className="mt-2 bg-muted rounded-lg p-3 text-sm space-y-1">
+                  <p className="font-medium text-foreground">{recipient.name}</p>
+                  <p className="text-muted-foreground">Wallet: {recipient.walletId}</p>
+                </div>
               )}
               {recipientPhone.length >= 10 && !recipient && (
                 <p className="text-sm text-destructive mt-1">Recipient not found</p>
               )}
             </div>
             <div>
-              <Label className="text-sm font-semibold mb-2 block">Amount (KES)</Label>
+              <Label className="text-sm font-semibold mb-2 block">Amount ({user.currency})</Label>
               <Input type="number" placeholder="0.00" value={amount} onChange={(e) => setAmount(e.target.value)} className="text-center text-lg" />
             </div>
             {val > 0 && (
               <div className="bg-muted rounded-lg p-4 space-y-2 text-sm">
                 <div className="flex justify-between">
                   <span className="text-muted-foreground">Amount</span>
-                  <span className="text-foreground font-medium">KES {val.toLocaleString()}</span>
+                  <span className="text-foreground font-medium">{user.currency} {val.toLocaleString()}</span>
                 </div>
                 <div className="flex justify-between">
                   <span className="text-muted-foreground">Fee</span>
-                  <span className="text-foreground font-medium">KES {fee.toLocaleString()}</span>
+                  <span className="text-foreground font-medium">{user.currency} {fee.toLocaleString()}</span>
                 </div>
                 <div className="border-t border-border pt-2 flex justify-between font-semibold">
                   <span className="text-foreground">Total</span>
-                  <span className="text-foreground">KES {(val + fee).toLocaleString()}</span>
+                  <span className="text-foreground">{user.currency} {(val + fee).toLocaleString()}</span>
                 </div>
               </div>
             )}

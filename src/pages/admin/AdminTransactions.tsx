@@ -4,7 +4,7 @@ import { DashboardLayout } from "@/components/layout/DashboardLayout";
 
 export default function AdminTransactions() {
   const { transactions } = useAuth();
-  const [activeTab, setActiveTab] = useState<"all" | "deposits" | "withdrawals" | "transfers" | "statements" | "reports">("all");
+  const [activeTab, setActiveTab] = useState<"deposits" | "withdrawals" | "transfers" | "statements" | "reports">("deposits");
 
   const statusColor: Record<string, string> = {
     completed: "bg-success text-success-foreground",
@@ -14,7 +14,6 @@ export default function AdminTransactions() {
   };
 
   const tabs = [
-    { id: "all" as const, label: "All" },
     { id: "deposits" as const, label: "Deposits" },
     { id: "withdrawals" as const, label: "Withdrawals" },
     { id: "transfers" as const, label: "Transfers" },
@@ -23,17 +22,16 @@ export default function AdminTransactions() {
   ];
 
   const filtered = transactions.filter((txn) => {
-    if (activeTab === "all") return true;
     if (activeTab === "deposits") return txn.type === "deposit";
     if (activeTab === "withdrawals") return txn.type === "withdrawal";
     if (activeTab === "transfers") return txn.type === "transfer" || txn.type === "send_money";
-    if (activeTab === "statements") return false; // placeholder
-    if (activeTab === "reports") return false; // placeholder
+    if (activeTab === "statements") return false;
+    if (activeTab === "reports") return false;
     return true;
   });
 
   return (
-    <DashboardLayout title="All Transactions">
+    <DashboardLayout title="Transactions">
       <div className="page-container">
         <div className="form-card">
           {/* Tabs */}

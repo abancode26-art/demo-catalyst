@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useMemo } from "react";
 import { useAuth } from "@/contexts/AuthContext";
 import { DashboardLayout } from "@/components/layout/DashboardLayout";
 import { PINDialog } from "@/components/PINDialog";
@@ -11,37 +11,36 @@ import { cn } from "@/lib/utils";
 import { toast } from "sonner";
 import { calculateFee, generateTransactionId } from "@/lib/demo-data";
 
-export default function Deposit() {
+const NETWORKS = ["Safaricom", "Airtel", "Telkom"];
+const AIRTIME_PRESETS = [50, 100, 200, 500, 1000, 2000];
+
+export default function SellAirtime() {
   const { user, processTransaction } = useAuth();
-  const [method, setMethod] = useState<"cad" | "mpesa">("mpesa");
+  const [network, setNetwork] = useState("");
+  const [phone, setPhone] = useState("");
   const [amount, setAmount] = useState("");
   const [showConfirm, setShowConfirm] = useState(false);
   const [showPIN, setShowPIN] = useState(false);
   const [receipt, setReceipt] = useState<ReceiptData | null>(null);
 
   if (!user) return null;
-
-  const presets = [500, 1000, 5000, 10000];
   const val = parseFloat(amount || "0");
-  const fee = val > 0 ? calculateFee(val, "deposit") : 0;
 
-  const handleDeposit = () => {
-    if (!val || val <= 0) {
-      toast.error("Enter a valid amount");
-      return;
-    }
+  const handleSell = () => {
+    if (!network) { toast.error("Select a network"); return; }
+    if (!phone) { toast.error("Enter customer phone number"); return; }
+    if (!val || val <= 0) { toast.error("Enter amount"); return; }
+    if (val > user.balance) { toast.error("Insufficient agent balance"); return; }
     setShowConfirm(true);
   };
 
   const confirmInfo: ConfirmInfo = {
-    title: "Confirm Wallet Load",
+    title: "Confirm Airtime Sale",
     details: [
-      { label: "Method", value: method === "mpesa" ? "M-Pesa" : "CAD" },
-      { label: "Wallet Number", value: user.walletId },
-      { label: "Account Name", value: user.name },
+      { label: "Network", value: network },
+      { label: "Customer Phone", value: phone },
       { label: "Amount", value: `${user.currency} ${val.toLocaleString()}` },
-      { label: "Fee", value: `${user.currency} ${fee.toLocaleString()}` },
-      { label: "Net Credit", value: `${user.currency} ${(val - fee).toLocaleString()}` },
+      { label: "Agent Wallet", value: user.walletId },
     ],
   };
 
@@ -54,75 +53,73 @@ export default function Deposit() {
     setShowPIN(false);
     const ref = generateTransactionId();
     processTransaction({
-      type: "deposit",
-      method: method === "mpesa" ? "mpesa" : undefined,
+      type: "airtime",
       amount: val,
-      fee,
+      fee: 0,
       reference: ref,
+      network,
     });
     setReceipt({
-      title: `${user.currency} ${val.toLocaleString()} Loaded`,
+      title: `${user.currency} ${val.toLocaleString()} Airtime Sold`,
       items: [
-        { label: "Method", value: method === "mpesa" ? "M-Pesa" : "CAD" },
-        { label: "Wallet Number", value: user.walletId },
+        { label: "Network", value: network },
+        { label: "Customer Phone", value: phone },
         { label: "Amount", value: `${user.currency} ${val.toLocaleString()}` },
-        { label: "Fee", value: `${user.currency} ${fee.toLocaleString()}` },
+        { label: "Agent Wallet", value: user.walletId },
         { label: "Currency", value: user.currency },
         { label: "Status", value: "Successful" },
       ],
       reference: ref,
     });
     setAmount("");
+    setPhone("");
   };
 
   return (
-    <DashboardLayout title="Load Wallet">
+    <DashboardLayout title="Sell Airtime">
       <div className="page-container">
         <div className="max-w-xl mx-auto form-card">
-          <h2 className="text-xl font-semibold text-foreground mb-1">Load Wallet</h2>
+          <h2 className="text-xl font-semibold text-foreground mb-1">Sell Airtime</h2>
           <p className="text-sm text-muted-foreground mb-6">
-            Balance: <span className="font-bold text-foreground">{user.currency} {user.balance.toLocaleString()}</span>
+            Agent Balance: <span className="font-bold text-foreground">{user.currency} {user.balance.toLocaleString()}</span>
           </p>
 
           <div className="space-y-6">
-            {/* Method Selection */}
             <div>
-              <Label className="text-sm font-semibold mb-3 block">Load Method</Label>
+              <Label className="text-sm font-semibold mb-3 block">Select Network</Label>
               <div className="flex gap-3">
-                {(["mpesa", "cad"] as const).map((m) => (
+                {NETWORKS.map((n) => (
                   <button
-                    key={m}
-                    onClick={() => setMethod(m)}
+                    key={n}
+                    onClick={() => setNetwork(n)}
                     className={cn(
                       "flex-1 py-3 px-4 rounded-lg border-2 text-sm font-medium transition-all",
-                      method === m
+                      network === n
                         ? "border-primary text-primary bg-accent"
                         : "border-border text-foreground hover:border-muted-foreground"
                     )}
                   >
-                    {m === "mpesa" ? "M-Pesa" : "CAD"}
+                    {n}
                   </button>
                 ))}
               </div>
             </div>
 
-            {/* Amount */}
+            <div>
+              <Label className="text-sm font-semibold mb-2 block">Customer Phone Number</Label>
+              <Input value={phone} onChange={(e) => setPhone(e.target.value)} placeholder="07XXXXXXXX" />
+            </div>
+
             <div>
               <Label className="text-sm font-semibold mb-2 block">Amount ({user.currency})</Label>
-              <Input
-                type="number"
-                placeholder="0.00"
-                value={amount}
-                onChange={(e) => setAmount(e.target.value)}
-                className="text-center text-lg"
-              />
-              <div className="flex gap-2 mt-3">
-                {presets.map((p) => (
+              <Input type="number" placeholder="0" value={amount} onChange={(e) => setAmount(e.target.value)} className="text-center text-lg" />
+              <div className="flex gap-2 mt-3 flex-wrap">
+                {AIRTIME_PRESETS.map((p) => (
                   <button
                     key={p}
                     onClick={() => setAmount(String(p))}
                     className={cn(
-                      "flex-1 py-2 rounded-lg border text-sm font-medium transition-colors",
+                      "py-2 px-4 rounded-lg border text-sm font-medium transition-colors",
                       amount === String(p)
                         ? "border-primary text-primary bg-accent"
                         : "border-border text-foreground hover:bg-muted"
@@ -134,29 +131,8 @@ export default function Deposit() {
               </div>
             </div>
 
-            {val > 0 && (
-              <div className="bg-muted rounded-lg p-4 space-y-2 text-sm">
-                <div className="flex justify-between">
-                  <span className="text-muted-foreground">Amount</span>
-                  <span className="text-foreground font-medium">{user.currency} {val.toLocaleString()}</span>
-                </div>
-                <div className="flex justify-between">
-                  <span className="text-muted-foreground">Fee</span>
-                  <span className="text-foreground font-medium">{user.currency} {fee.toLocaleString()}</span>
-                </div>
-                <div className="border-t border-border pt-2 flex justify-between font-semibold">
-                  <span className="text-foreground">Net Credit</span>
-                  <span className="text-foreground">{user.currency} {(val - fee).toLocaleString()}</span>
-                </div>
-              </div>
-            )}
-
-            <Button
-              onClick={handleDeposit}
-              disabled={!amount}
-              className="w-full"
-            >
-              Load Wallet
+            <Button onClick={handleSell} disabled={!amount || !network || !phone} className="w-full">
+              Sell Airtime
             </Button>
           </div>
         </div>

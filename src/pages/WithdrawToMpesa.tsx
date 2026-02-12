@@ -33,9 +33,10 @@ export default function WithdrawToMpesa() {
     details: [
       { label: "M-Pesa Name", value: user.name },
       { label: "Phone Number", value: user.phone },
-      { label: "Amount", value: `KES ${val.toLocaleString()}` },
-      { label: "Fee", value: `KES ${fee.toLocaleString()}` },
-      { label: "Total Deducted", value: `KES ${(val + fee).toLocaleString()}` },
+      { label: "Wallet Number", value: user.walletId },
+      { label: "Amount", value: `${user.currency} ${val.toLocaleString()}` },
+      { label: "Fee", value: `${user.currency} ${fee.toLocaleString()}` },
+      { label: "Total Deducted", value: `${user.currency} ${(val + fee).toLocaleString()}` },
     ],
   };
 
@@ -55,11 +56,14 @@ export default function WithdrawToMpesa() {
       reference: ref,
     });
     setReceipt({
-      title: `KES ${val.toLocaleString()} Sent to M-Pesa`,
+      title: `${user.currency} ${val.toLocaleString()} Sent to M-Pesa`,
       items: [
+        { label: "Name", value: user.name },
         { label: "Phone", value: user.phone },
-        { label: "Amount", value: `KES ${val.toLocaleString()}` },
-        { label: "Fee", value: `KES ${fee.toLocaleString()}` },
+        { label: "Wallet Number", value: user.walletId },
+        { label: "Amount", value: `${user.currency} ${val.toLocaleString()}` },
+        { label: "Fee", value: `${user.currency} ${fee.toLocaleString()}` },
+        { label: "Currency", value: user.currency },
         { label: "Status", value: "Successful" },
       ],
       reference: ref,
@@ -73,7 +77,7 @@ export default function WithdrawToMpesa() {
         <div className="max-w-xl mx-auto form-card">
           <h2 className="text-xl font-semibold text-foreground mb-1">Withdraw to M-Pesa</h2>
           <p className="text-sm text-muted-foreground mb-6">
-            Balance: <span className="font-bold text-foreground">KES {user.balance.toLocaleString()}</span>
+            Balance: <span className="font-bold text-foreground">{user.currency} {user.balance.toLocaleString()}</span>
           </p>
 
           <div className="space-y-5">
@@ -83,22 +87,22 @@ export default function WithdrawToMpesa() {
               <p className="text-xs text-muted-foreground mt-1">Withdrawal will be sent to your registered number</p>
             </div>
             <div>
-              <Label className="text-sm font-semibold mb-2 block">Amount (KES)</Label>
+              <Label className="text-sm font-semibold mb-2 block">Amount ({user.currency})</Label>
               <Input type="number" placeholder="0.00" value={amount} onChange={(e) => setAmount(e.target.value)} className="text-center text-lg" />
             </div>
             {val > 0 && (
               <div className="bg-muted rounded-lg p-4 space-y-2 text-sm">
                 <div className="flex justify-between">
                   <span className="text-muted-foreground">Amount</span>
-                  <span className="text-foreground font-medium">KES {val.toLocaleString()}</span>
+                  <span className="text-foreground font-medium">{user.currency} {val.toLocaleString()}</span>
                 </div>
                 <div className="flex justify-between">
                   <span className="text-muted-foreground">Fee</span>
-                  <span className="text-foreground font-medium">KES {fee.toLocaleString()}</span>
+                  <span className="text-foreground font-medium">{user.currency} {fee.toLocaleString()}</span>
                 </div>
                 <div className="border-t border-border pt-2 flex justify-between font-semibold">
                   <span className="text-foreground">Total Deducted</span>
-                  <span className="text-foreground">KES {(val + fee).toLocaleString()}</span>
+                  <span className="text-foreground">{user.currency} {(val + fee).toLocaleString()}</span>
                 </div>
               </div>
             )}

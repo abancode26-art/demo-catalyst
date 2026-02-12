@@ -3,12 +3,15 @@ import { DashboardLayout } from "@/components/layout/DashboardLayout";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Badge } from "@/components/ui/badge";
 import { Upload, CheckCircle, Clock, XCircle } from "lucide-react";
+import { useCallback, useState } from "react";
+import { toast } from "sonner";
 
 export default function ProfileKYC() {
-  const { user } = useAuth();
+  const { user, currencies } = useAuth();
   if (!user) return null;
+
+  const enabledCurrencies = currencies.filter(c => c.enabled);
 
   const kycIcon = {
     approved: <CheckCircle className="h-5 w-5 text-success" />,
@@ -38,13 +41,46 @@ export default function ProfileKYC() {
               <Input value={user.phone} readOnly className="bg-muted" />
             </div>
             <div>
-              <Label className="text-sm">Wallet ID</Label>
+              <Label className="text-sm">Wallet Number</Label>
               <Input value={user.walletId} readOnly className="bg-muted" />
             </div>
             <div>
               <Label className="text-sm">Account Type</Label>
               <Input value={user.role.charAt(0).toUpperCase() + user.role.slice(1)} readOnly className="bg-muted" />
             </div>
+            <div>
+              <Label className="text-sm">Preferred Currency</Label>
+              <Input value={user.currency} readOnly className="bg-muted" />
+            </div>
+          </div>
+        </div>
+
+        {/* Transaction PIN */}
+        <div className="form-card">
+          <h2 className="text-base font-semibold text-foreground mb-4">Transaction PIN</h2>
+          <p className="text-sm text-muted-foreground mb-4">Your transaction PIN is required for all financial operations.</p>
+          <Button variant="outline" onClick={() => toast.success("Transaction PIN has been set")}>
+            Create / Reset Transaction PIN
+          </Button>
+        </div>
+
+        {/* Currency Selection */}
+        <div className="form-card">
+          <h2 className="text-base font-semibold text-foreground mb-4">Wallet Currency</h2>
+          <p className="text-sm text-muted-foreground mb-3">Select your preferred wallet currency during KYC.</p>
+          <div className="flex flex-wrap gap-2">
+            {enabledCurrencies.map((c) => (
+              <div
+                key={c.code}
+                className={`px-4 py-2 rounded-lg border text-sm font-medium ${
+                  user.currency === c.code
+                    ? "border-primary text-primary bg-accent"
+                    : "border-border text-muted-foreground"
+                }`}
+              >
+                {c.code} — {c.name}
+              </div>
+            ))}
           </div>
         </div>
 

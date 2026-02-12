@@ -1,5 +1,9 @@
 import React, { createContext, useContext, useState, useCallback } from "react";
-import { DemoUser, DEMO_USERS, Transaction, DEMO_TRANSACTIONS, generateTransactionId, calculateFee, STATEMENT_DOWNLOAD_FEE } from "@/lib/demo-data";
+import {
+  DemoUser, DEMO_USERS, Transaction, DEMO_TRANSACTIONS,
+  generateTransactionId, calculateFee, STATEMENT_DOWNLOAD_FEE,
+  Notification, Currency, DEMO_CURRENCIES,
+} from "@/lib/demo-data";
 import { toast } from "sonner";
 
 interface ProcessTransactionInput {
@@ -10,11 +14,15 @@ interface ProcessTransactionInput {
   reference: string;
   recipientPhone?: string;
   targetUserId?: string;
+  network?: string;
+  recipientWallet?: string;
 }
 
 interface AuthContextType {
   user: DemoUser | null;
   transactions: Transaction[];
+  notifications: Notification[];
+  currencies: Currency[];
   login: (phone: string, password: string) => boolean;
   logout: () => void;
   deposit: (amount: number, method: "mpesa" | "card") => void;
@@ -24,6 +32,8 @@ interface AuthContextType {
   allUsers: DemoUser[];
   updateUser: (userId: string, updates: Partial<DemoUser>) => void;
   processTransaction: (input: ProcessTransactionInput) => void;
+  addCurrency: (currency: Currency) => void;
+  toggleCurrency: (code: string) => void;
 }
 
 const AuthContext = createContext<AuthContextType | null>(null);
@@ -32,6 +42,20 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [user, setUser] = useState<DemoUser | null>(null);
   const [users, setUsers] = useState<DemoUser[]>([...DEMO_USERS]);
   const [transactions, setTransactions] = useState<Transaction[]>([...DEMO_TRANSACTIONS]);
+  const [notifications, setNotifications] = useState<Notification[]>([]);
+  const [currencies, setCurrencies] = useState<Currency[]>([...DEMO_CURRENCIES]);
+
+  const addNotification = useCallback((userId: string, message: string, type: string) => {
+    const notif: Notification = {
+      id: `notif-${Date.now()}-${Math.random().toString(36).slice(2, 6)}`,
+      userId,
+      date: new Date().toISOString().slice(0, 16).replace("T", " "),
+      message,
+      type,
+      read: false,
+    };
+    setNotifications((prev) => [notif, ...prev]);
+  }, []);
 
   const login = useCallback((phone: string, password: string): boolean => {
     const found = users.find((u) => u.phone === phone && u.password === password);
@@ -47,6 +71,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const deposit = useCallback((amount: number, method: "mpesa" | "card") => {
     if (!user) return;
     const fee = calculateFee(amount, "deposit");
+    const ref = generateTransactionId();
     const txn: Transaction = {
       id: `txn-${Date.now()}`,
       date: new Date().toISOString().slice(0, 16).replace("T", " "),
@@ -57,7 +82,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       amount,
       fee,
       status: "completed",
-      reference: generateTransactionId(),
+      reference: ref,
+      senderWallet: user.walletId,
     };
     setTransactions((prev) => [txn, ...prev]);
     const updatedUser = {
@@ -67,8 +93,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     };
     setUser(updatedUser);
     setUsers((prev) => prev.map((u) => (u.id === user.id ? updatedUser : u)));
-    toast.success(`KES ${amount.toLocaleString()} deposited successfully`);
-  }, [user]);
+    addNotification(user.id, `${user.currency} ${amount.toLocaleString()} deposited to wallet ${user.walletId}`, "deposit");
+    toast.success(`${user.currency} ${amount.toLocaleString()} deposited successfully`);
+  }, [user, addNotification]);
 
   const withdraw = useCallback((amount: number, method: "mpesa" | "card") => {
     if (!user) return;
@@ -77,6 +104,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       toast.error("Insufficient balance");
       return;
     }
+    const ref = generateTransactionId();
     const txn: Transaction = {
       id: `txn-${Date.now()}`,
       date: new Date().toISOString().slice(0, 16).replace("T", " "),
@@ -87,7 +115,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       amount,
       fee,
       status: "completed",
-      reference: generateTransactionId(),
+      reference: ref,
+      senderWallet: user.walletId,
     };
     setTransactions((prev) => [txn, ...prev]);
     const updatedUser = {
@@ -97,8 +126,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     };
     setUser(updatedUser);
     setUsers((prev) => prev.map((u) => (u.id === user.id ? updatedUser : u)));
-    toast.success(`KES ${amount.toLocaleString()} withdrawn successfully`);
-  }, [user]);
+    addNotification(user.id, `${user.currency} ${amount.toLocaleString()} withdrawn from wallet ${user.walletId}`, "withdrawal");
+    toast.success(`${user.currency} ${amount.toLocaleString()} withdrawn successfully`);
+  }, [user, addNotification]);
 
   const transfer = useCallback((amount: number, recipientPhone: string) => {
     if (!user) return;
@@ -112,6 +142,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       toast.error("Recipient not found");
       return;
     }
+    const ref = generateTransactionId();
     const txn: Transaction = {
       id: `txn-${Date.now()}`,
       date: new Date().toISOString().slice(0, 16).replace("T", " "),
@@ -121,7 +152,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       amount,
       fee,
       status: "completed",
-      reference: generateTransactionId(),
+      reference: ref,
+      senderWallet: user.walletId,
+      recipientWallet: recipient.walletId,
     };
     setTransactions((prev) => [txn, ...prev]);
     const updatedUser = {
@@ -138,8 +171,10 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         return u;
       })
     );
-    toast.success(`KES ${amount.toLocaleString()} sent to ${recipient.name}`);
-  }, [user, users]);
+    addNotification(user.id, `${user.currency} ${amount.toLocaleString()} sent to ${recipient.name} (${recipient.walletId})`, "transfer");
+    addNotification(recipient.id, `${user.currency} ${amount.toLocaleString()} received from ${user.name} (${user.walletId})`, "transfer");
+    toast.success(`${user.currency} ${amount.toLocaleString()} sent to ${recipient.name}`);
+  }, [user, users, addNotification]);
 
   const processTransaction = useCallback((input: ProcessTransactionInput) => {
     if (!user) return;
@@ -154,12 +189,14 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       fee: input.fee,
       status: "completed",
       reference: input.reference,
+      network: input.network,
+      senderWallet: user.walletId,
+      recipientWallet: input.recipientWallet,
     };
     setTransactions((prev) => [txn, ...prev]);
 
     let balanceChange = 0;
     if (input.type === "deposit") {
-      // If agent depositing to a target user
       if (input.targetUserId) {
         setUsers((prev) =>
           prev.map((u) =>
@@ -168,7 +205,16 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
               : u
           )
         );
-        toast.success(`KES ${input.amount.toLocaleString()} deposited successfully`);
+        // Deduct from agent wallet
+        const updatedAgent = { ...user, balance: user.balance - input.amount };
+        setUser(updatedAgent);
+        setUsers((prev) => prev.map((u) => (u.id === user.id ? updatedAgent : u)));
+        const targetUser = users.find(u => u.id === input.targetUserId);
+        addNotification(user.id, `${user.currency} ${input.amount.toLocaleString()} deposited to ${targetUser?.name || "user"} (${targetUser?.walletId || ""})`, "deposit");
+        if (input.targetUserId) {
+          addNotification(input.targetUserId, `${user.currency} ${input.amount.toLocaleString()} received from agent ${user.name} (${user.walletId})`, "deposit");
+        }
+        toast.success(`${user.currency} ${input.amount.toLocaleString()} deposited successfully`);
         return;
       }
       balanceChange = input.amount - input.fee;
@@ -195,15 +241,18 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
             u.id === recipient.id ? { ...u, balance: u.balance + input.amount } : u
           )
         );
+        addNotification(recipient.id, `${user.currency} ${input.amount.toLocaleString()} received from ${user.name} (${user.walletId})`, "send_money");
       }
     }
 
+    // Notification for the sender
     const typeLabel = input.type === "airtime" ? "Airtime purchased" :
       input.type === "send_money" ? "Money sent" :
       input.type === "withdrawal" ? "Withdrawal" :
       input.type === "deposit" ? "Deposit" : "Transaction";
-    toast.success(`${typeLabel} — KES ${input.amount.toLocaleString()}`);
-  }, [user, users]);
+    addNotification(user.id, `${typeLabel} — ${user.currency} ${input.amount.toLocaleString()} from wallet ${user.walletId}`, input.type);
+    toast.success(`${typeLabel} — ${user.currency} ${input.amount.toLocaleString()}`);
+  }, [user, users, addNotification]);
 
   const chargeStatementDownload = useCallback((): boolean => {
     if (!user) return false;
@@ -211,6 +260,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       toast.error("Insufficient balance for statement download (KES 50)");
       return false;
     }
+    const ref = generateTransactionId();
     const txn: Transaction = {
       id: `txn-${Date.now()}`,
       date: new Date().toISOString().slice(0, 16).replace("T", " "),
@@ -220,15 +270,16 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       amount: STATEMENT_DOWNLOAD_FEE,
       fee: 0,
       status: "completed",
-      reference: generateTransactionId(),
+      reference: ref,
     };
     setTransactions((prev) => [txn, ...prev]);
     const updatedUser = { ...user, balance: user.balance - STATEMENT_DOWNLOAD_FEE };
     setUser(updatedUser);
     setUsers((prev) => prev.map((u) => (u.id === user.id ? updatedUser : u)));
+    addNotification(user.id, `Statement downloaded — KES 50 deducted from wallet ${user.walletId}`, "statement");
     toast.success("Statement downloaded. KES 50 deducted.");
     return true;
-  }, [user]);
+  }, [user, addNotification]);
 
   const updateUser = useCallback((userId: string, updates: Partial<DemoUser>) => {
     setUsers((prev) =>
@@ -239,9 +290,22 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     }
   }, [user]);
 
+  const addCurrency = useCallback((currency: Currency) => {
+    setCurrencies((prev) => [...prev, currency]);
+  }, []);
+
+  const toggleCurrency = useCallback((code: string) => {
+    setCurrencies((prev) => prev.map((c) => c.code === code ? { ...c, enabled: !c.enabled } : c));
+  }, []);
+
   return (
     <AuthContext.Provider
-      value={{ user, transactions, login, logout, deposit, withdraw, transfer, chargeStatementDownload, allUsers: users, updateUser, processTransaction }}
+      value={{
+        user, transactions, notifications, currencies,
+        login, logout, deposit, withdraw, transfer,
+        chargeStatementDownload, allUsers: users, updateUser,
+        processTransaction, addCurrency, toggleCurrency,
+      }}
     >
       {children}
     </AuthContext.Provider>
